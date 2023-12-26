@@ -13,7 +13,7 @@ Before using this script, you need to have the following software and packages i
 - Chrome WebDriver
 - Chrome web browser
 - webdriver-manager
-- smtplib (for sending email notifications)
+
 
 You can install the required Python packages using pip:
 
