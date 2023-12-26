@@ -56,18 +56,14 @@ def get_open_seats(class_number):
 
     except NoSuchElementException:
         print("Dropdown option 'Spring 2024' does not exist.")
-          # Wait for 10 seconds before closing the browser
         return None
     except TimeoutException:
         print("Timed out waiting for the elements to be present.")
-        
         return None
     except Exception as e:
         print(f"An error occurred: {e}")
-        time.sleep(3)  # Wait for 10 seconds before closing the browser
+        time.sleep(3)  # Wait for 3 seconds before closing the browser
         return None
-    
-        
 
 # Example usage
 class_number = '30429'  # Replace with the class number you want to search for
