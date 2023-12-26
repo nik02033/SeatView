@@ -28,8 +28,9 @@ Update the following variables in the script:
 class_number
 
 Run the script by executing the following command:
+```bash
 python SeatView.py
-
+```
 Disclaimer
 
 This script is intended for educational and personal use. Use it responsibly and respect ASU's terms of service and policies.
