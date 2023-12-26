@@ -31,6 +31,10 @@ Run the script by executing the following command:
 ```bash
 python SeatView.py
 ```
+License
+
+This script is released under the MIT License. See the LICENSE file for more details.
+
 Disclaimer
 
 This script is intended for educational and personal use. Use it responsibly and respect ASU's terms of service and policies.
