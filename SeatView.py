@@ -9,13 +9,13 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import Select
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 import time
-import sys
 
 # Initialize the Chrome browser with Selenium WebDriver
 options = Options()
-options.headless = True  # Set to True if you don't need a browser UI
+options.headless = False  # Set to True if you don't need a browser UI
 service = Service(ChromeDriverManager().install())
 driver = webdriver.Chrome(service=service, options=options)
+is_class_open = None
 
 def get_open_seats(class_number):
     try:
@@ -35,27 +35,24 @@ def get_open_seats(class_number):
         term_select = Select(term_dropdown_element)
         term_select.select_by_visible_text('Spring 2024') 
 
-        while True:
+        
         # Wait for the search box to be present and enter the class number
-            search_box = wait.until(EC.presence_of_element_located((By.ID, 'keyword')))
-            search_box.clear()
-            search_box.send_keys(class_number)
+        search_box = wait.until(EC.presence_of_element_located((By.ID, 'keyword')))
+        search_box.clear()
+        search_box.send_keys(class_number)
 
         # Find the search button and click it
-            search_button = driver.find_element(By.ID, 'search-button')
-            search_button.click()
+        search_button = driver.find_element(By.ID, 'search-button')
+        search_button.click()
 
         # Wait for the search results to load and for the open seats element to be present
-            wait.until(EC.visibility_of_element_located((By.XPATH, '/html/body/div[2]/div[2]/div[1]/div/div/div[5]/div/div/div/div[2]/div[12]/div')))
+        wait.until(EC.visibility_of_element_located((By.XPATH, '/html/body/div[2]/div[2]/div[1]/div/div/div[5]/div/div/div/div[2]/div[12]/div')))
 
         # Locate the element that contains the number of open seats
-            open_seats_element = driver.find_element(By.XPATH, '/html/body/div[2]/div[2]/div[1]/div/div/div[5]/div/div/div/div[2]/div[12]/div')
-            open_seats_text = open_seats_element.text.strip()
-            open_seats = int(open_seats_text.split(' ')[0])
-            if open_seats > 0:
-                send_email(class_number, open_seats)
-                sys.exit()
-            return open_seats
+        open_seats_element = driver.find_element(By.XPATH, '/html/body/div[2]/div[2]/div[1]/div/div/div[5]/div/div/div/div[2]/div[12]/div')
+        open_seats_text = open_seats_element.text.strip()
+        open_seats = int(open_seats_text.split(' ')[0])
+        return open_seats
 
     except NoSuchElementException:
         print("Dropdown option 'Spring 2024' does not exist.")
@@ -68,15 +65,14 @@ def get_open_seats(class_number):
         time.sleep(3)  # Wait for 3 seconds before closing the browser
         return None
 
-def send_email(class_number, open_seats):
+def send_email_body(class_number, body):
     smtp_server = 'smtp.gmail.com'
     smtp_port = 587  # Gmail SMTP port for TLS
     smtp_security = 'TLS'  # Use 'TLS' for Gmail
     sender_email = 'pickaclass4098@gmail.com'  # Replace with your Gmail address
     app_password = 'etms dhbs lbez iyvl'  # Replace with the generated App Password
     recipient_email = 'nkanodi1@asu.edu'  # Replace with the recipient's email address
-    subject = f"Open Seats Available for Class {class_number}"
-    body = f"There are currently {open_seats} open seats available for class number {class_number}."
+    subject = f" {body}"
 
     try:
         mail = smtplib.SMTP(smtp_server, smtp_port)
@@ -93,6 +89,37 @@ def send_email(class_number, open_seats):
     except Exception as e:
         print(f"Failed to send email: {e}")
 
+def monitor_class_availability(class_number, check_interval=300):
+    global is_class_open
+    while True:
+        open_seats = get_open_seats(class_number)
+        if open_seats is not None:
+            if is_class_open is None:
+                # First run, set the initial state
+                is_class_open = open_seats > 0
+                send_initial_email(class_number, is_class_open)
+            elif open_seats > 0 and not is_class_open:
+                # Class opened up
+                is_class_open = True
+                send_email(class_number, open_seats, "opened")
+            elif open_seats == 0 and is_class_open:
+                # Class closed
+                is_class_open = False
+                send_email(class_number, open_seats, "closed")
+        time.sleep(check_interval)
+    
+def send_initial_email(class_number, is_open):
+    status = "open" if is_open else "closed"
+    body = f"The class {class_number} is currently {status}. We will notify you when the status changes."
+    send_email_body(class_number, body)
+
+def send_email(class_number, open_seats, status):
+    if status == "opened":
+        body = f"The class {class_number} has just opened up with {open_seats} available seats."
+    elif status == "closed":
+        body = f"The class {class_number} has closed with no available seats."
+    send_email_body(class_number, body)
+
 #Example usage
 class_number = '30429'  # Replace with the class number you want to search for
-get_open_seats(class_number)
+monitor_class_availability(class_number)
