@@ -1,6 +1,4 @@
 import smtplib
-from email.mime.text import MIMEText
-from email.mime.multipart import MIMEMultipart
 from selenium import webdriver
 from selenium.webdriver.common.by import By
 from selenium.webdriver.support.ui import WebDriverWait
@@ -11,10 +9,11 @@ from webdriver_manager.chrome import ChromeDriverManager
 from selenium.webdriver.support.ui import Select
 from selenium.common.exceptions import NoSuchElementException, TimeoutException
 import time
+import sys
 
 # Initialize the Chrome browser with Selenium WebDriver
 options = Options()
-options.headless = False  # Set to True if you don't need a browser UI
+options.headless = True  # Set to True if you don't need a browser UI
 service = Service(ChromeDriverManager().install())
 driver = webdriver.Chrome(service=service, options=options)
 
@@ -36,23 +35,27 @@ def get_open_seats(class_number):
         term_select = Select(term_dropdown_element)
         term_select.select_by_visible_text('Spring 2024') 
 
+        while True:
         # Wait for the search box to be present and enter the class number
-        search_box = wait.until(EC.presence_of_element_located((By.ID, 'keyword')))
-        search_box.clear()
-        search_box.send_keys(class_number)
+            search_box = wait.until(EC.presence_of_element_located((By.ID, 'keyword')))
+            search_box.clear()
+            search_box.send_keys(class_number)
 
         # Find the search button and click it
-        search_button = driver.find_element(By.ID, 'search-button')
-        search_button.click()
+            search_button = driver.find_element(By.ID, 'search-button')
+            search_button.click()
 
         # Wait for the search results to load and for the open seats element to be present
-        wait.until(EC.visibility_of_element_located((By.XPATH, '/html/body/div[2]/div[2]/div[1]/div/div/div[5]/div/div/div/div[2]/div[12]/div')))
+            wait.until(EC.visibility_of_element_located((By.XPATH, '/html/body/div[2]/div[2]/div[1]/div/div/div[5]/div/div/div/div[2]/div[12]/div')))
 
         # Locate the element that contains the number of open seats
-        open_seats_element = driver.find_element(By.XPATH, '/html/body/div[2]/div[2]/div[1]/div/div/div[5]/div/div/div/div[2]/div[12]/div')
-        open_seats_text = open_seats_element.text.strip()
-        open_seats = int(open_seats_text.split(' ')[0])
-        return open_seats
+            open_seats_element = driver.find_element(By.XPATH, '/html/body/div[2]/div[2]/div[1]/div/div/div[5]/div/div/div/div[2]/div[12]/div')
+            open_seats_text = open_seats_element.text.strip()
+            open_seats = int(open_seats_text.split(' ')[0])
+            if open_seats > 0:
+                send_email(class_number, open_seats)
+                sys.exit()
+            return open_seats
 
     except NoSuchElementException:
         print("Dropdown option 'Spring 2024' does not exist.")
@@ -65,10 +68,31 @@ def get_open_seats(class_number):
         time.sleep(3)  # Wait for 3 seconds before closing the browser
         return None
 
-# Example usage
+def send_email(class_number, open_seats):
+    smtp_server = 'smtp.gmail.com'
+    smtp_port = 587  # Gmail SMTP port for TLS
+    smtp_security = 'TLS'  # Use 'TLS' for Gmail
+    sender_email = 'pickaclass4098@gmail.com'  # Replace with your Gmail address
+    app_password = 'etms dhbs lbez iyvl'  # Replace with the generated App Password
+    recipient_email = 'nkanodi1@asu.edu'  # Replace with the recipient's email address
+    subject = f"Open Seats Available for Class {class_number}"
+    body = f"There are currently {open_seats} open seats available for class number {class_number}."
+
+    try:
+        mail = smtplib.SMTP(smtp_server, smtp_port)
+        mail.ehlo()
+        if smtp_security == 'TLS':
+            mail.starttls()
+        mail.login(sender_email, app_password)
+        
+        message = f"Subject: {subject}\n\n{body}"
+
+        mail.sendmail(sender_email, recipient_email, message)
+        mail.close()
+        print("Email sent successfully!")
+    except Exception as e:
+        print(f"Failed to send email: {e}")
+
+#Example usage
 class_number = '30429'  # Replace with the class number you want to search for
-open_seats = get_open_seats(class_number)
-if open_seats is not None and open_seats > 0:
-    print(f"There are {open_seats} open seats for class number {class_number}.")
-else:
-    print("No open seats available or could not retrieve open seats information.")
+get_open_seats(class_number)
