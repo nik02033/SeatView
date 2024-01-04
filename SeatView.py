@@ -69,9 +69,9 @@ def send_email_body(class_number, body):
     smtp_server = 'smtp.gmail.com'
     smtp_port = 587  # Gmail SMTP port for TLS
     smtp_security = 'TLS'  # Use 'TLS' for Gmail
-    sender_email = 'pickaclass4098@gmail.com'  # Replace with your Gmail address
-    app_password = 'etms dhbs lbez iyvl'  # Replace with the generated App Password
-    recipient_email = 'nkanodi1@asu.edu'  # Replace with the recipient's email address
+    sender_email = 'Email'  # Replace with your Gmail address
+    app_password = 'Pass'  # Replace with the generated App Password
+    recipient_email = 'Email'  # Replace with the recipient's email address
     subject = f" {body}"
 
     try:
